@@ -1,5 +1,5 @@
 # APSyncServer
-A web service written in Python to support automatic and secure uploading of Ardupilot logs via rsync. This project is the server implementation of the workflow outlined here: https://github.com/ArduPilot/companion/issues/21
+A web service written in Python to support automatic and secure uploading of Ardupilot logs via rsync. This project is the server implementation of the workflow outlined here: https://github.com/ArduPilot/companion/issues/21 .The client / vehicle side of this project can be found here: https://github.com/SamuelDudley/APSyncWeb
 
 #### One time registration with datalog server + setup of the companion computer
 _Significantly reduces the user setup effort_
