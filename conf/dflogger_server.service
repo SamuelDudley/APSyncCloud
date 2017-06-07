@@ -1,0 +1,14 @@
+[Unit]
+Description=DFLogger Server Service
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStartPre=/bin/bash /home/apsync-worker/APSyncServer/clean_setup.sh
+ExecStart=/usr/bin/python /home/apsync-worker/APSyncServer/server.py
+Restart=on-failure
+User=apsync-worker
+Group=apsync-worker
+
+[Install]
+WantedBy=multi-user.target
