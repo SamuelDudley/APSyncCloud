@@ -190,7 +190,39 @@ class VerifyHandler(tornado.web.RequestHandler):
             self.write(json.dumps({'verify':False, 'msg':'Verification failed! Perhaps the verification time has expired, has already been used or the URL was wrongly entered.'}))
         else:
             self.write(json.dumps({'verify':True, 'msg':'Credentials verified! Service ready to use :)', 'user_id':res[2], 'vehicle_id':res[4]}))
+    
+    def post(self):
+        # TODO: check for registration timeout and re send email
+        res = None
+        arg_dict =  { k: self.get_argument(k) for k in self.request.arguments }
+        public_key_fingerprint = arg_dict.get('public_key_fingerprint', None)
+        if not public_key_fingerprint:
+            print('failed to get public_key_fingerprint')
+            raise tornado.web.HTTPError(401) #401 Unauthorized
 
+        decoded_public_key_fingerprint = base64.b64decode(public_key_fingerprint)
+        # check fingerprint against DB, if an entry exists
+        print('got: {0}'.format(public_key_fingerprint))
+        
+        sql = "SELECT * FROM Users WHERE PublicKeyFingerprint=?"
+        con = lite.connect(db_file)
+        with con:
+            cur = con.cursor()
+            cur.execute(sql, [(decoded_public_key_fingerprint)])
+            res = cur.fetchone()
+            
+        if res is not None:
+            if len(res) >= 1:
+                if not res[6]: # user is not authenticated
+                    print("user is not authenticated")
+                    self.write(json.dumps({'verify':False, 'msg':'Credentials need to be verified! Please verify them by clicking on the link sent to your email address'}))
+                else:
+                    self.write(json.dumps({'verify':True, 'msg':'Credentials have been verified! Service ready to use :)', 'user_id':res[2], 'vehicle_id':res[4]}))
+            else:
+                self.write(json.dumps({'verify':False, 'msg':'An error occured when processing your request'}))        
+        else:           
+            raise tornado.web.HTTPError(401) #401 Unauthorized
+    
 class UploadHandler(tornado.web.RequestHandler):
     def initialize(self, queue):
         self.queue = queue
@@ -201,7 +233,7 @@ class UploadHandler(tornado.web.RequestHandler):
         public_key_fingerprint = arg_dict.get('public_key_fingerprint', None)
         if not public_key_fingerprint:
             print('failed to get public_key_fingerprint')
-            return
+            raise tornado.web.HTTPError(401) #401 Unauthorized
 
         decoded_public_key_fingerprint = base64.b64decode(public_key_fingerprint)
         # check fingerprint against DB, if an entry exists
