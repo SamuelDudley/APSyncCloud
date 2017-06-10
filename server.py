@@ -26,8 +26,7 @@ class MainHandler(tornado.web.RequestHandler):
         self.xsrf_token
         
     def get(self):
-        self.write(json.dumps({'''msg':'Welcome to apsync.cloud! This webservice can be used to securely and automatically move your 
-        Ardupilot logs to the cloud... See https://github.com/SamuelDudley/APSyncWeb for more info '''}))
+        self.write(json.dumps({'msg':'Welcome to apsync.cloud! This webservice can be used to securely and automatically move your Ardupilot logs from a companion computer to the cloud... See https://github.com/SamuelDudley/APSyncWeb for more info'}))
 
 class RegisterHandler(tornado.web.RequestHandler):  
     def post(self):
