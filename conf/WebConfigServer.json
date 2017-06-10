@@ -1,0 +1,14 @@
+{
+  "email_user": "domainAdmin@gmail.com", 
+  "email_password": "password_for_email_user",
+  "webserver_domain": "https://domain.com",
+  "webserver_port": "5000",
+  "webserver_address": "127.0.0.1",
+  "webserver_debug": "1",
+  "webserver_autoreload": "1",
+  "webserver_cookie_secret": "GENERATE_YOUR_OWN_RANDOM_VALUE_HERE",
+  "user": "user",
+  "worker": "worker",
+  "verification_timeout": "3600",
+  "upload_timeout": "30"
+}

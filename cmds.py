@@ -2,6 +2,7 @@ import subprocess, time
 import os, errno
 from contextlib import contextmanager
 
+
 @contextmanager
 def cd(newdir):
     prevdir = os.getcwd()
@@ -52,13 +53,13 @@ def generate_key_fingerprint(key_path):
 def block_directory_creation():
     args = ['/bin/bash', '-c', 'i=50000; while setfacl -m "d:u:${i}:-" .; do i=$((i + 1)); done']
     ret = run(args)
-    print ret
 
-def give_dir_permissions(dir_path):
-    args = ['chown', 'apsync-worker:apsync', dir_path]
+
+def give_dir_permissions(dir_path, owner, group):
+    args = ['chown', '{0}:{1}'.format(owner, group), dir_path]
     ret = run(args)
-    print ret
+
     args = ['chmod', '0770', dir_path]
     ret = run(args)
-    print ret
+
     

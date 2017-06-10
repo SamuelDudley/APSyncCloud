@@ -26,7 +26,8 @@ class MainHandler(tornado.web.RequestHandler):
         self.xsrf_token
         
     def get(self):
-        self.write(json.dumps({'msg':'welcome to apsync.cloud!'}))
+        self.write(json.dumps({'''msg':'Welcome to apsync.cloud! This webservice can be used to securely and automatically move your 
+        Ardupilot logs to the cloud... See https://github.com/SamuelDudley/APSyncWeb for more info '''}))
 
 class RegisterHandler(tornado.web.RequestHandler):  
     def post(self):
@@ -61,7 +62,7 @@ class RegisterHandler(tornado.web.RequestHandler):
         # user does not exist and key does not exist # new user and vehicle_id
         # user does not exist but key exits # this is an issue as we require unique public keys...
         
-        verify_url = "{0}/verify?hash={1}".format(config['webserver_address'],verify_hash)
+        verify_url = "{0}/verify?hash={1}".format(config['webserver_domain'],verify_hash)
         sql = "SELECT * FROM Users WHERE PublicKey=?"
         
         con = lite.connect(db_file)
@@ -169,7 +170,7 @@ class VerifyHandler(tornado.web.RequestHandler):
                             con.commit()
                         
                         # add ssh public key to authorized_keys with command
-                        command = 'command="rsync --server -vlHogDtprze.iLsfxC . /home/apsync/users/{0}/{1}/upload/",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding {2}'.format(res[2], res[4], res[0])
+                        command = 'command="rsync --server -vlHogDtprze.iLsfxC . /home/{0}/users/{1}/{2}/upload/",no-agent-forwarding,no-port-forwarding,no-pty,no-user-rc,no-X11-forwarding {3}'.format(config['user'], res[2], res[4], res[0])
                         filepath = "/home/{0}/.ssh/".format(config['user'])
                         mkdir_p(filepath)
                         filename = os.path.join(filepath, "authorized_keys")
@@ -177,8 +178,8 @@ class VerifyHandler(tornado.web.RequestHandler):
                             fid.write("{0}\n".format(command))
                         
                         # create the dflogger dirs
-                        mkdir_p('/home/apsync/users/{0}/{1}/'.format(res[2], res[4]))
-                        mkdir_p('/home/apsync/dflogger/{0}/{1}/'.format(res[2], res[4]))
+                        mkdir_p('/home/{0}/users/{1}/{2}/'.format(config['user'], res[2], res[4]))
+                        mkdir_p('/home/{0}/dflogger/{1}/{2}/'.format(config['user'], res[2], res[4]))
                         # note that the apsync user has no permissions in these dirs
                         # the user is now all set up!
                         verified = True
@@ -256,10 +257,10 @@ class UploadHandler(tornado.web.RequestHandler):
                     self.write( json.dumps({'archive_folder':res[8], 'valid_time':int((res[7]+int(config['upload_timeout']))-time.time())}))
                 if ((res[8] == '') or (res[7]+int(config['upload_timeout']) <= time.time())):
                     # we need a new archive folder...
-                    upload_base = '/home/apsync/users/{0}/{1}/'.format(res[2], res[4])
-                    upload_path = '/home/apsync/users/{0}/{1}/upload'.format(res[2], res[4])
+                    upload_base = '/home/{0}/users/{1}/{2}/'.format(config['user'], res[2], res[4])
+                    upload_path = '/home/{0}/users/{1}/{2}/upload'.format(config['user'], res[2], res[4])
                     archive_folder = 'dataflash-{0}-{1}'.format(res[4], datetime.utcnow().strftime('%Y%m%d%H%M%S'))
-                    archive_path = '/home/apsync/dflogger/{0}/{1}/{2}'.format(res[2], res[4], archive_folder)
+                    archive_path = '/home/{0}/dflogger/{1}/{2}/{3}'.format(config['user'], res[2], res[4], archive_folder)
                     mkdir_p(upload_base) # should already exist
                     mkdir_p(archive_path) # should already exist
                     
@@ -273,7 +274,7 @@ class UploadHandler(tornado.web.RequestHandler):
                     
                     with cd(archive_path):
                         block_directory_creation()
-                    give_dir_permissions(archive_path)
+                    give_dir_permissions(dir_path = archive_path, owner = config['worker'], group = config['user'])
                     # make a symlink called 'upload' and point it to the archive dir
                     os.symlink(archive_path, upload_path)
                     
@@ -314,7 +315,7 @@ class Application(tornado.web.Application):
             (r"/upload", UploadHandler, dict(queue=queue)),
         ]
         settings = dict(
-            cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
+            cookie_secret=config['webserver_cookie_secret'],
 #             template_path=os.path.join(os.path.dirname(__file__), "templates"),
 #             static_path=os.path.join(os.path.dirname(__file__), "static"),
             xsrf_cookies=True,
@@ -365,7 +366,7 @@ if __name__ == "__main__":
     application = Application(queue)
     server = tornado.httpserver.HTTPServer(application)
     port = int(config['webserver_port'])
-    server.listen(port, address='127.0.0.1')
+    server.listen(port, address=config['webserver_address'])
     
     upload_watcher_deployer_thread = threading.Thread(target=upload_watcher_deployer,args=(queue,))
     upload_watcher_deployer_thread.daemon = True
